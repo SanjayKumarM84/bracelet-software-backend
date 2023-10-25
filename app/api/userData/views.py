@@ -12,20 +12,20 @@ from config import app
 from app.api.userData.models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# # Function to hash a password using SHA-256
-# def hash_password(password):
-#     salt = 'random_salt'  # You should use a unique salt per user
-#     password = password + salt
-#     return hashlib.sha256(password.encode()).hexdigest()
+# Function to hash a password using SHA-256
+def hash_password(password):
+    salt = 'random_salt'  # You should use a unique salt per user
+    password = password + salt
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
-# # Function to verify a password
-# def verify_password(plain_password, stored_hashed_password):
-#     salt = 'random_salt'
-#     input_password = plain_password + salt
-#     input_hashed_password = hashlib.sha256(input_password.encode()).hexdigest()
-#     print(input_hashed_password, stored_hashed_password)
-#     return input_hashed_password == stored_hashed_password
+# Function to verify a password
+def verify_password(plain_password, stored_hashed_password):
+    salt = 'random_salt'
+    input_password = plain_password + salt
+    input_hashed_password = hashlib.sha256(input_password.encode()).hexdigest()
+    print(input_hashed_password, stored_hashed_password)
+    return input_hashed_password == stored_hashed_password
 
 
 @app.route('/signUp', methods=['POST'])
@@ -47,7 +47,7 @@ def signUp():
             return failure(message="failure", content="User Already Exists")
 
         userObj = User(
-            name=name, email=email if email else None, phoneNo=phoneNo, password = password
+            name=name, email=email if email else None, phoneNo=phoneNo, password = hash_password(password)
         )
         add_item(userObj)
 
@@ -62,7 +62,7 @@ def signUp():
 def login():
     try:
         payload = request.get_json()
-        email = payload.get('email')
+        email = payload.get('email', '')
         phoneNo = payload.get('phoneNo')
         password = payload.get('password')
 
@@ -76,8 +76,8 @@ def login():
             return failure(message="failure", content="User Not Found!")
 
         # print(userExists.password)
-        # if not (userExists.password == password):
-        #     return failure(message="failure", content="Incorrect Password!")
+        if not verify_password(password, userExists.password):
+            return failure(message="failure", content="Incorrect Password!")
 
         return success(message="Successfully Logged In", content={"userId": userExists.id})
     except:
